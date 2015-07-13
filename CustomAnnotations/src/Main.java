@@ -9,9 +9,9 @@ import com.model.Tokenize;
 
 public class Main {
 
-	public static void main(String[] args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, InstantiationException {
+	public static void main(String[] args) throws Exception {
 		
-		String str = "token1|token2|token3";
+		String str = "to*ken1|token2|token3";
 		Tokenize tokenize = Tokenize.class.newInstance();
 		
 		Class tokenizeClass = Tokenize.class;
@@ -19,12 +19,19 @@ public class Main {
 			Annotation fileAnnotation = tokenizeClass.getAnnotation(FileInfo.class);
 			FileInfo fileInfo = (FileInfo)fileAnnotation;
 			String[] tokens = str.split(fileInfo.delimiter());
+			String token = null;
 			if(tokens != null && tokens.length >0 ){
 				for(Method method:tokenizeClass.getDeclaredMethods()){
 					if(method.isAnnotationPresent(RecordInfo.class)){
 						Annotation methodAnnotation = method.getAnnotation(RecordInfo.class);
 						RecordInfo recordInfo = (RecordInfo)methodAnnotation;
-						method.invoke(tokenize, tokens[recordInfo.position()-1]);	
+						token = tokens[recordInfo.position()-1];
+						if(token.matches(recordInfo.regExPattern())){
+							method.invoke(tokenize, token);
+						}else{
+							throw new Exception("Validation failed for the token: "+token+", Regex"+recordInfo.regExPattern());
+						}
+							
 					}
 					
 				}
